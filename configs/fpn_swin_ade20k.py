@@ -1,7 +1,11 @@
-# configs/fpn_swin_ade20k_weighted.py
+# configs/fpn_swin_ade20k_improved.py
 
 dataset_type = 'ADE20KDataset'
 data_root = 'ADEChallengeData2016/'
+
+# More standard image scales 
+crop_size = (512, 512)
+img_scale = (1024, 512)
 
 model = dict(
     type='EncoderDecoder',
@@ -12,7 +16,7 @@ model = dict(
         bgr_to_rgb=True,
         pad_val=0,
         seg_pad_val=255,
-        size=(512, 512)),
+        size_divisor=32),
     backbone=dict(
         type='SwinTransformer',
         pretrain_img_size=224,
@@ -45,7 +49,7 @@ model = dict(
         in_channels=[256, 256, 256, 256],
         in_index=[0, 1, 2, 3],
         feature_strides=[4, 8, 16, 32],
-        channels=256,
+        channels=128,
         dropout_ratio=0.1,
         num_classes=150,
         norm_cfg=dict(type='BN', requires_grad=True),
@@ -54,23 +58,22 @@ model = dict(
             type='CrossEntropyLoss',
             use_sigmoid=False,
             loss_weight=1.0,
-            class_weight=None,  # Will be updated dynamically
-            avg_non_ignore=True,
-            ignore_index=255)),
+            avg_non_ignore=True)),
     train_cfg=dict(),
     test_cfg=dict(mode='whole'))
 
-# Data loading pipeline remains the same
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations', reduce_zero_label=True),
     dict(
         type='RandomResize',
-        scale=(512, 512),
+        scale=img_scale,
         ratio_range=(0.5, 2.0),
         keep_ratio=True),
-    dict(type='RandomCrop', crop_size=(512, 512), cat_max_ratio=0.75),
+    dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
     dict(type='RandomFlip', prob=0.5),
+    dict(type='PhotoMetricDistortion'),
+    dict(type='Pad', size=crop_size),
     dict(
         type='Normalize',
         mean=[123.675, 116.28, 103.53],
@@ -79,11 +82,15 @@ train_pipeline = [
     dict(type='PackSegInputs')
 ]
 
-# Validation pipeline remains the same
+# Modified validation pipeline to ensure consistent sizes
 val_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadAnnotations', reduce_zero_label=True),
-    dict(type='Resize', scale=(2048, 512), keep_ratio=True),
+    dict(
+        type='Resize',
+        scale=crop_size,  # Changed to use crop_size instead of img_scale
+        keep_ratio=False),  # Changed to False to maintain exact dimensions
+    dict(type='Pad', size=crop_size),
     dict(
         type='Normalize',
         mean=[123.675, 116.28, 103.53],
@@ -92,9 +99,8 @@ val_pipeline = [
     dict(type='PackSegInputs')
 ]
 
-# Data loaders
 train_dataloader = dict(
-    batch_size=2,
+    batch_size=4,
     num_workers=4,
     persistent_workers=True,
     sampler=dict(type='InfiniteSampler', shuffle=True),
@@ -121,11 +127,13 @@ val_dataloader = dict(
 
 test_dataloader = val_dataloader
 
-# Evaluation settings
-val_evaluator = dict(type='IoUMetric', iou_metrics=['mIoU'])
+val_evaluator = dict(
+    type='IoUMetric',
+    iou_metrics=['mIoU'],
+    ignore_label=255)
 test_evaluator = val_evaluator
 
-# Optimization settings
+# Rest of the config remains the same
 optim_wrapper = dict(
     type='AmpOptimWrapper',
     optimizer=dict(
@@ -142,50 +150,44 @@ optim_wrapper = dict(
     clip_grad=dict(max_norm=5.0, norm_type=2),
     accumulative_counts=2)
 
-# Learning rate scheduler
 param_scheduler = [
     dict(
         type='LinearLR',
         start_factor=0.1,
         by_epoch=False,
         begin=0,
-        end=1500),
+        end=2000),
     dict(
         type='PolyLR',
         eta_min=1e-6,
         power=1.0,
-        begin=1500,
+        begin=2000,
         end=160000,
         by_epoch=False)
 ]
 
-# Training settings
 train_cfg = dict(
     type='IterBasedTrainLoop',
     max_iters=160000,
-    val_interval=2000)
+    val_interval=200)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
-# Default runtime settings
 default_scope = 'mmseg'
 env_cfg = dict(
     cudnn_benchmark=True,
     mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
     dist_cfg=dict(backend='nccl'))
 
-# Visualization settings
 vis_backends = [
     dict(type='LocalVisBackend'),
     dict(type='TensorboardVisBackend')
 ]
-
 visualizer = dict(
     type='SegLocalVisualizer',
     vis_backends=vis_backends,
     name='visualizer')
 
-# Default hooks
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
     logger=dict(type='LoggerHook', interval=50),
