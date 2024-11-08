@@ -1,0 +1,10 @@
+mmsegmentation/
+ADEChallengeData2016/
+work_dirs/
+mm.ipynb:Zone.Identifier
+result.jpg:Zone.Identifier
+train.py:Zone.Identifier
+configs/base_fpn_ade20k.py:Zone.Identifier
+configs/fpn_convnext_ade20k.py:Zone.Identifier
+configs/fpn_pvt_ade20k.py:Zone.Identifier
+configs/fpn_swin_ade20k.py:Zone.Identifier
