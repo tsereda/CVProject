@@ -7,7 +7,7 @@ from PIL import Image
 from tqdm import tqdm
 import logging
 
-def calculate_class_frequencies(data_root, num_classes=150):
+def calculate_class_frequencies(data_root, num_classes=151):
     """
     Calculate class frequencies from ADE20K training annotations with enhanced debugging.
     
@@ -89,7 +89,6 @@ def calculate_class_frequencies(data_root, num_classes=150):
                 # Count pixels per class for valid labels
                 for class_id in range(num_classes):
                     class_pixels[class_id] += np.sum(ann_valid == class_id)
-                
         except Exception as e:
             print(f"\nError processing file {filename}: {str(e)}")
             continue

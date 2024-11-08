@@ -51,7 +51,7 @@ model = dict(
         feature_strides=[4, 8, 16, 32],
         channels=128,
         dropout_ratio=0.1,
-        num_classes=150,
+        num_classes=151,
         norm_cfg=dict(type='BN', requires_grad=True),
         align_corners=False,
         loss_decode=dict(
@@ -67,9 +67,9 @@ train_pipeline = [
     dict(type='LoadAnnotations', reduce_zero_label=True),
     dict(
         type='RandomResize',
-        scale=img_scale,
+        scale=crop_size,
         ratio_range=(0.5, 2.0),
-        keep_ratio=True),
+        keep_ratio=False),
     dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
     dict(type='RandomFlip', prob=0.5),
     dict(type='PhotoMetricDistortion'),
@@ -85,17 +85,17 @@ train_pipeline = [
 # Modified validation pipeline to ensure consistent sizes
 val_pipeline = [
     dict(type='LoadImageFromFile'),
-    dict(type='LoadAnnotations', reduce_zero_label=True),
     dict(
         type='Resize',
-        scale=crop_size,  # Changed to use crop_size instead of img_scale
-        keep_ratio=False),  # Changed to False to maintain exact dimensions
+        scale=crop_size,
+        keep_ratio=False),
     dict(type='Pad', size=crop_size),
     dict(
         type='Normalize',
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         to_rgb=True),
+    dict(type='LoadAnnotations', reduce_zero_label=True),
     dict(type='PackSegInputs')
 ]
 
