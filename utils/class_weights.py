@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# utils/class_weights.py
-
 import os
 import numpy as np
 from PIL import Image

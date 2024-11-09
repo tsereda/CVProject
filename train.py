@@ -99,7 +99,6 @@ def setup_weights(cfg, weights_path, calculate_weights=False):
                 # Clip weights to prevent extreme values
                 weights = np.clip(weights, 0.1, 10.0)
         
-        # Update config with weights or remove class_weight if no valid weights
         if weights is not None:
             if 'decode_head' in cfg.model:
                 cfg.model.decode_head.loss_decode.class_weight = weights.tolist()

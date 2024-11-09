@@ -1,9 +1,6 @@
-# configs/fpn_swin_ade20k_improved.py
-
 dataset_type = 'ADE20KDataset'
 data_root = 'ADEChallengeData2016/'
 
-# More standard image scales 
 crop_size = (512, 512)
 img_scale = (1024, 512)
 
@@ -133,7 +130,6 @@ val_evaluator = dict(
     ignore_label=255)
 test_evaluator = val_evaluator
 
-# Rest of the config remains the same
 optim_wrapper = dict(
     type='AmpOptimWrapper',
     optimizer=dict(
@@ -169,7 +165,7 @@ param_scheduler = [
 train_cfg = dict(
     type='IterBasedTrainLoop',
     max_iters=160000,
-    val_interval=200)
+    val_interval=2000)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
@@ -183,10 +179,7 @@ vis_backends = [
     dict(type='LocalVisBackend'),
     dict(type='TensorboardVisBackend')
 ]
-visualizer = dict(
-    type='SegLocalVisualizer',
-    vis_backends=vis_backends,
-    name='visualizer')
+
 
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
