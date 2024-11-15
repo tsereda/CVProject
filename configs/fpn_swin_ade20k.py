@@ -5,59 +5,67 @@ crop_size = (512, 512)
 img_scale = (1024, 512)
 
 model = dict(
-    type='EncoderDecoder',
-    data_preprocessor=dict(
-        type='SegDataPreProcessor',
-        mean=[123.675, 116.28, 103.53],
-        std=[58.395, 57.12, 57.375],
-        bgr_to_rgb=True,
-        pad_val=0,
-        seg_pad_val=255,
-        size_divisor=32),
-    backbone=dict(
-        type='SwinTransformer',
-        pretrain_img_size=224,
-        embed_dims=128,
-        depths=[2, 2, 18, 2],
-        num_heads=[4, 8, 16, 32],
-        window_size=7,
-        use_abs_pos_embed=False,
-        drop_path_rate=0.2,
-        patch_norm=True,
-        patch_size=4,
-        mlp_ratio=4,
-        strides=(4, 2, 2, 2),
-        out_indices=(0, 1, 2, 3),
-        qkv_bias=True,
-        qk_scale=None,
-        drop_rate=0.,
-        attn_drop_rate=0.,
-        with_cp=True,
-        init_cfg=dict(
-            type='Pretrained',
-            checkpoint='https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_base_patch4_window7_224_22k_20220317-4f79f7c0.pth')),
-    neck=dict(
-        type='FPN',
-        in_channels=[128, 256, 512, 1024],
-        out_channels=256,
-        num_outs=4),
-    decode_head=dict(
-        type='FPNHead',
-        in_channels=[256, 256, 256, 256],
-        in_index=[0, 1, 2, 3],
-        feature_strides=[4, 8, 16, 32],
-        channels=128,
-        dropout_ratio=0.1,
-        num_classes=151,
-        norm_cfg=dict(type='BN', requires_grad=True),
-        align_corners=False,
-        loss_decode=dict(
-            type='CrossEntropyLoss',
-            use_sigmoid=False,
-            loss_weight=1.0,
-            avg_non_ignore=True)),
-    train_cfg=dict(),
-    test_cfg=dict(mode='whole'))
+   type='EncoderDecoder',
+   data_preprocessor=dict(
+       type='SegDataPreProcessor',
+       mean=[123.675, 116.28, 103.53],
+       std=[58.395, 57.12, 57.375],
+       bgr_to_rgb=True,
+       pad_val=0,
+       seg_pad_val=255,
+       size_divisor=32),
+   backbone=dict(
+       type='SwinTransformer',
+       pretrain_img_size=224,
+       embed_dims=128,
+       depths=[2, 2, 18, 2],
+       num_heads=[4, 8, 16, 32],
+       window_size=7,
+       use_abs_pos_embed=False,
+       drop_path_rate=0.2,
+       patch_norm=True,
+       patch_size=4,
+       mlp_ratio=4,
+       strides=(4, 2, 2, 2),
+       out_indices=(0, 1, 2, 3),
+       qkv_bias=True,
+       qk_scale=None,
+       drop_rate=0.,
+       attn_drop_rate=0.,
+       with_cp=True,
+       init_cfg=dict(
+           type='Pretrained',
+           checkpoint='https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_base_patch4_window7_224_22k_20220317-4f79f7c0.pth')),
+   neck=dict(
+       type='FPN',
+       in_channels=[128, 256, 512, 1024],
+       out_channels=256,
+       num_outs=4),
+   decode_head=dict(
+       type='FPNHead',
+       in_channels=[256, 256, 256, 256],
+       in_index=[0, 1, 2, 3],
+       feature_strides=[4, 8, 16, 32],
+       channels=256,
+       dropout_ratio=0.1,
+       num_classes=151,
+       norm_cfg=dict(type='BN', requires_grad=True),
+       align_corners=False,
+       loss_decode=[
+           dict(
+               type='CrossEntropyLoss',
+               use_sigmoid=False,
+               loss_weight=1.0,
+               avg_non_ignore=True
+           ),
+           dict(
+               type='DiceLoss',
+               use_sigmoid=False,
+               loss_weight=1.0
+           )
+       ]),
+   train_cfg=dict(),
+   test_cfg=dict(mode='whole'))
 
 train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -134,7 +142,7 @@ optim_wrapper = dict(
     type='AmpOptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=0.0001,
+        lr=0.0003,
         betas=(0.9, 0.999),
         weight_decay=0.01),
     paramwise_cfg=dict(
@@ -143,13 +151,14 @@ optim_wrapper = dict(
             'relative_position_bias_table': dict(decay_mult=0.),
             'norm': dict(decay_mult=0.)
         }),
-    clip_grad=dict(max_norm=5.0, norm_type=2),
+    clip_grad=dict(max_norm=30.0, norm_type=2),
     accumulative_counts=2)
 
 param_scheduler = [
     dict(
         type='LinearLR',
-        start_factor=0.1,
+        start_factor=1.0,
+        end_factor=0.1,  # Added to ensure clear decrease
         by_epoch=False,
         begin=0,
         end=2000),
