@@ -56,6 +56,7 @@ model = dict(
                type='CrossEntropyLoss',
                use_sigmoid=False,
                loss_weight=1.0,
+               class_weight=None,
                avg_non_ignore=True
            ),
            dict(
@@ -174,7 +175,7 @@ param_scheduler = [
 train_cfg = dict(
     type='IterBasedTrainLoop',
     max_iters=160000,
-    val_interval=2000)
+    val_interval=50)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
@@ -192,7 +193,7 @@ vis_backends = [
 
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
-    logger=dict(type='LoggerHook', interval=50),
+    logger=dict(type='LoggerHook', interval=10),
     param_scheduler=dict(type='ParamSchedulerHook'),
     checkpoint=dict(type='CheckpointHook', by_epoch=False, interval=4000),
     sampler_seed=dict(type='DistSamplerSeedHook'),
