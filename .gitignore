@@ -8,3 +8,5 @@ configs/base_fpn_ade20k.py:Zone.Identifier
 configs/fpn_convnext_ade20k.py:Zone.Identifier
 configs/fpn_pvt_ade20k.py:Zone.Identifier
 configs/fpn_swin_ade20k.py:Zone.Identifier
+visual_results/vis_data/20241116_014043.json
+visual_results/

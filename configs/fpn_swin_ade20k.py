@@ -187,9 +187,17 @@ env_cfg = dict(
 
 vis_backends = [
     dict(type='LocalVisBackend'),
-    dict(type='TensorboardVisBackend')
+    dict(type='TensorboardVisBackend'),
+    dict(type='WandbVisBackend')
 ]
 
+
+visualizer = dict(
+    type='SegLocalVisualizer',
+    vis_backends=vis_backends,
+    name='visualizer',
+    save_dir='visual_results'
+)
 
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
