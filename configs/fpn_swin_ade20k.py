@@ -175,7 +175,7 @@ param_scheduler = [
 train_cfg = dict(
     type='IterBasedTrainLoop',
     max_iters=160000,
-    val_interval=50)
+    val_interval=6000)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 

@@ -10,6 +10,8 @@ from mmengine.runner import Runner
 from mmengine.logging import print_log
 from mmseg.utils import register_all_modules
 from utils.class_weights import setup_weights
+from utils.wandb_logging import create_wandb_config
+import wandb
 
 def parse_args():
     parser = ArgumentParser(description='Train a segmentor')
@@ -87,6 +89,16 @@ def main():
     
     # Load and validate config
     cfg = Config.fromfile(args.config)
+
+    wandb_config = create_wandb_config(cfg)
+
+    wandb.init(
+        project="mmseg",  # Change this
+        name=Path(args.config).stem,  # Uses config filename as run name
+        config=wandb_config,
+        allow_val_change=True  # This uploads your entire config
+    )
+
     verify_dataset(cfg)
     cfg = setup_environment(cfg, args)
     
