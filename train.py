@@ -58,10 +58,8 @@ def setup_environment(cfg, args):
         cfg.work_dir = os.path.join('./work_dirs',
                                   os.path.splitext(os.path.basename(args.config))[0])
     Path(cfg.work_dir).mkdir(parents=True, exist_ok=True)
-    
-    # Set up weights
-    weights_path = os.path.join(cfg.work_dir, 'class_weights.npy')
-    cfg = setup_weights(cfg, weights_path)
+
+    cfg = setup_weights(cfg)
     
     # Handle resume/validate settings
     if args.resume_from:

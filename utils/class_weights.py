@@ -1,139 +1,105 @@
-import os
 import numpy as np
-import logging
-from pathlib import Path
+import os
+
+def setup_weights(cfg):
+    """Setup class weights for training."""
+    try:
+        weights = None
+        ratio_file = 'ADEChallengeData2016/objectInfo150.txt'
+        
+        if os.path.exists(ratio_file):
+            ratios, class_samples = load_class_ratios_from_file(ratio_file)
+            weights = compute_class_weights(ratios, class_samples)
+            
+            # Update config - handle list of losses
+            if weights is not None and len(weights) == 151:
+                if isinstance(cfg.model.decode_head.loss_decode, list):
+                    for loss in cfg.model.decode_head.loss_decode:
+                        if loss['type'] == 'CrossEntropyLoss':
+                            loss['class_weight'] = weights.tolist()
+                            break
+                else:
+                    cfg.model.decode_head.loss_decode.class_weight = weights.tolist()
+            else:
+                print("Invalid weights shape, expected 151 classes")
+                
+        else:
+            print(f"objectInfo150.txt not found at {ratio_file}")
+            return cfg
+            
+    except Exception as e:
+        print(f"Error setting up weights: {str(e)}")
+        return cfg
+    
+    return cfg
 
 def load_class_ratios_from_file(ratio_file_path):
-    """
-    Load class ratios from the ADE20K objectInfo150.txt file.
+    """Load class ratios from the ADE20K objectInfo150.txt file."""
+    ratios = np.zeros(151, dtype=np.float32)
+    class_samples = np.zeros(151, dtype=np.int32)
     
-    Args:
-        ratio_file_path (str): Path to objectInfo150.txt
+    with open(ratio_file_path, 'r') as f:
+        next(f)  # Skip header
+        for line in f:
+            parts = line.strip().split('\t')
+            if len(parts) >= 4:
+                idx = int(parts[0]) - 1
+                ratio = float(parts[1])
+                train_samples = int(parts[2])
+                ratios[idx] = ratio
+                class_samples[idx] = train_samples
     
-    Returns:
-        np.ndarray: Array of class ratios including ignore label (151 classes total)
-    """
-    try:
-        # Initialize array for 150 classes + ignore label
-        ratios = np.zeros(151, dtype=np.float32)
-        
-        with open(ratio_file_path, 'r') as f:
-            # Skip header line
-            next(f)
-            for line in f:
-                parts = line.strip().split('\t')
-                if len(parts) >= 2:
-                    idx = int(parts[0]) - 1  # Convert to 0-based index
-                    ratio = float(parts[1])
-                    ratios[idx] = ratio
-        
-        # Validate ratios
-        if np.any(~np.isfinite(ratios[:-1])):  # Exclude ignore label
-            raise ValueError("Non-finite values found in class ratios")
-        if not np.allclose(ratios[:-1].sum(), 1.0, rtol=1e-3):
-            logging.warning("Class ratios don't sum to 1.0 (sum: %.4f)", ratios[:-1].sum())
-        
-        return ratios
-        
-    except Exception as e:
-        raise ValueError(f"Error loading class ratios: {str(e)}")
+    return ratios, class_samples
 
-def compute_class_weights(ratios, method='median', beta=0.9999):
-    """
-    Compute class weights from ratios using different balancing methods.
-    
-    Args:
-        ratios (np.ndarray): Class ratios
-        method (str): 'median' or 'inverse'
-        beta (float): Trimming parameter for inverse method
-    
-    Returns:
-        np.ndarray: Class weights including ignore label
-    """
-    if method == 'median':
-        # Median frequency balancing
-        median_freq = np.median(ratios[ratios > 0])
-        weights = np.where(ratios > 0, median_freq / ratios, 1.0)
-    
-    elif method == 'inverse':
-        # Inverse frequency with beta-trimming
-        weights = np.where(ratios > 0,
-                          (1 - beta) / (1 - beta ** ratios),
+def compute_class_weights(ratios, class_samples):
+    """Compute balanced class weights with improved scaling."""
+    # Use log scaling for frequency weights to compress the range
+    freq_weights = np.where(ratios > 0,
+                          1 / np.log1p(ratios * 100),  # Multiply by 100 to handle small ratios better
                           1.0)
-    else:
-        raise ValueError(f"Unknown weighting method: {method}")
     
-    # Clip extreme values
-    weights = np.clip(weights, 0.1, 10.0)
+    # Log scaling for sample counts with better normalization
+    max_samples = np.max(class_samples)
+    sample_weights = np.where(class_samples > 0,
+                            1 / np.log1p(class_samples / max_samples * 1000),
+                            1.0)
     
-    # Normalize weights to have mean 1
-    weights = weights / weights.mean()
+    # Combine weights with balanced contribution
+    weights = freq_weights * np.sqrt(sample_weights)  # Reduce sample count influence
+    
+    # Normalize more gently
+    weights = (weights - weights.min()) / (weights.max() - weights.min() + 1e-5)
+    weights = weights * 1.5 + 0.1  # Adjust range to [0.1, 1.6]
+    
+    # Normalize to mean 1
+    weights = weights / weights[weights > 0].mean()
+    
+    # Clip with tighter bounds
+    weights = np.clip(weights, 0.1, 5.0)
+    
+    # Final normalization
+    weights = weights / weights[weights > 0].mean()
     
     # Set ignore label weight to 0
     weights[-1] = 0
     
     return weights
 
-def setup_weights(cfg, weights_path=None, method='median'):
-    """
-    Setup class weights for training, either loading from objectInfo150.txt
-    or from a pre-computed weights file.
+if __name__ == '__main__':
+    data_file = 'ADEChallengeData2016/objectInfo150.txt'
     
-    Args:
-        cfg: Config object containing data_root
-        weights_path (str, optional): Path to save/load pre-computed weights
-        method (str): Weighting method ('median' or 'inverse')
+    if not os.path.exists(data_file):
+        print(f"Error: Could not find {data_file}")
+        exit(1)
+        
+    ratios, class_samples = load_class_ratios_from_file(data_file)
+    weights = compute_class_weights(ratios, class_samples)
     
-    Returns:
-        cfg: Updated config with weights
-    """
-    try:
-        weights = None
-        
-        # Try to load pre-computed weights if path provided
-        if weights_path and os.path.exists(weights_path):
-            try:
-                weights = np.load(weights_path)
-                logging.info("Loaded pre-computed weights from %s", weights_path)
-            except Exception as e:
-                logging.warning("Failed to load weights: %s", str(e))
-        
-        # If no weights loaded, compute from objectInfo150.txt
-        if weights is None:
-            ratio_file = os.path.join(cfg.data_root, 'objectInfo150.txt')
-            if os.path.exists(ratio_file):
-                ratios = load_class_ratios_from_file(ratio_file)
-                weights = compute_class_weights(ratios, method=method)
-                logging.info("Computed weights from class ratios")
-                
-                # Save weights if path provided
-                if weights_path:
-                    os.makedirs(os.path.dirname(weights_path), exist_ok=True)
-                    np.save(weights_path, weights)
-                    logging.info("Saved weights to %s", weights_path)
-            else:
-                logging.warning("objectInfo150.txt not found at %s", ratio_file)
-                return cfg
-        
-        # In setup_weights function, change the config update to:
-        if weights is not None and len(weights) == 151:
-            if 'decode_head' in cfg.model:
-                if isinstance(cfg.model.decode_head.loss_decode, list):
-                    # Find CrossEntropyLoss in the list
-                    for loss in cfg.model.decode_head.loss_decode:
-                        if loss['type'] == 'CrossEntropyLoss':
-                            loss['class_weight'] = weights.tolist()
-                            logging.info("Updated CrossEntropyLoss with class weights")
-                            break
-                else:
-                    # Single loss case
-                    cfg.model.decode_head.loss_decode.class_weight = weights.tolist()
-                logging.info("Updated config with class weights")
-            
-    except Exception as e:
-        logging.error("Error setting up weights: %s", str(e))
-        # Ensure no invalid weights in config
-        if 'decode_head' in cfg.model and hasattr(cfg.model.decode_head.loss_decode, 'class_weight'):
-            cfg.model.decode_head.loss_decode.class_weight = None
+    print(f"Computed weights for {len(weights)-1} classes")
+    print(f"Min weight: {weights[:-1].min():.4f}")
+    print(f"Max weight: {weights[:-1].max():.4f}")
+    print(f"Median weight: {np.median(weights[:-1]):.4f}")
     
-    return cfg
+    print("\nDetailed weights:")
+    for i, weight in enumerate(weights[:-1]):
+        print(f"Class {i+1:3d}: {weight:.4f}")
