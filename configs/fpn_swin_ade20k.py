@@ -22,7 +22,7 @@ model = dict(
        num_heads=[4, 8, 16, 32],
        window_size=7,
        use_abs_pos_embed=False,
-       drop_path_rate=0.2,
+       drop_path_rate=0.3,
        patch_norm=True,
        patch_size=4,
        mlp_ratio=4,
@@ -62,7 +62,7 @@ model = dict(
            dict(
                type='DiceLoss',
                use_sigmoid=False,
-               loss_weight=0.
+               loss_weight=0.5
            )
        ]),
    train_cfg=dict(),
@@ -77,6 +77,11 @@ train_pipeline = [
         ratio_range=(0.5, 2.0),
         keep_ratio=False),
     dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
+    dict(
+        type='RandomCutOut',
+        prob=0.3,
+        n_holes=(2, 5),
+        cutout_ratio=(0.05, 0.15)),
     dict(type='RandomFlip', prob=0.5),
     dict(
         type='RandomRotate',
@@ -159,11 +164,9 @@ optim_wrapper = dict(
         weight_decay=0.01),
     paramwise_cfg=dict(
         custom_keys={
-            'absolute_pos_embed': dict(decay_mult=0.),
-            'relative_position_bias_table': dict(decay_mult=0.),
-            'norm': dict(decay_mult=0.)
+            'backbone': dict(lr_mult=0.1)
         }),
-    clip_grad=dict(max_norm=30.0, norm_type=2),
+    clip_grad=dict(max_norm=20.0, norm_type=2),
     accumulative_counts=4)
 
 param_scheduler = [
@@ -188,7 +191,11 @@ train_cfg = dict(
     max_iters=40000,
     val_interval=2500)
 val_cfg = dict(type='ValLoop')
-test_cfg = dict(type='TestLoop')
+test_cfg = dict(
+    mode='slide',
+    crop_size=(512, 512),
+    stride=(256, 256),
+    multi_scale=[(0.5, 0.5), (0.75, 0.75), (1.0, 1.0), (1.25, 1.25), (1.5, 1.5)])
 
 default_scope = 'mmseg'
 env_cfg = dict(
