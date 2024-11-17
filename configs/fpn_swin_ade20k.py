@@ -167,7 +167,7 @@ optim_wrapper = dict(
             'backbone': dict(lr_mult=0.1)
         }),
     clip_grad=dict(max_norm=20.0, norm_type=2),
-    accumulative_counts=4)
+    accumulative_counts=8)
 
 param_scheduler = [
     dict(
