@@ -64,20 +64,7 @@ model = dict(
                use_sigmoid=False,
                loss_weight=0.0
            )
-       ]),
-    auxiliary_head=dict(  # Added auxiliary head
-        type='FCNHead',
-        in_channels=256,
-        in_index=2,
-        channels=128,
-        num_convs=1,
-        concat_input=False,
-        dropout_ratio=0.1,
-        num_classes=151,
-        norm_cfg=dict(type='SyncBN', requires_grad=True),
-        align_corners=False,
-        loss_decode=dict(
-        type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+       ])
     train_cfg=dict(),
     test_cfg=dict(mode='whole'))
 
