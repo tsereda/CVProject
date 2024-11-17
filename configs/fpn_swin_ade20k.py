@@ -78,7 +78,18 @@ train_pipeline = [
         keep_ratio=False),
     dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
     dict(type='RandomFlip', prob=0.5),
-    dict(type='PhotoMetricDistortion'),
+    dict(
+        type='RandomRotate',
+        prob=0.3,
+        degree=(-10, 10),
+        pad_val=0,
+        seg_pad_val=255),
+    dict(
+        type='PhotoMetricDistortion',
+        brightness_delta=32,
+        contrast_range=(0.8, 1.2),
+        saturation_range=(0.8, 1.2),
+        hue_delta=10),
     dict(type='Pad', size=crop_size),
     dict(
         type='Normalize',
@@ -143,7 +154,7 @@ optim_wrapper = dict(
     type='AmpOptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=0.00009,
+        lr=0.0003,
         betas=(0.9, 0.999),
         weight_decay=0.01),
     paramwise_cfg=dict(
@@ -153,7 +164,7 @@ optim_wrapper = dict(
             'norm': dict(decay_mult=0.)
         }),
     clip_grad=dict(max_norm=30.0, norm_type=2),
-    accumulative_counts=2)
+    accumulative_counts=4)
 
 param_scheduler = [
     dict(
@@ -168,14 +179,14 @@ param_scheduler = [
         eta_min=1e-6,
         power=1.0,
         begin=2000,
-        end=160000,
+        end=40000,
         by_epoch=False)
 ]
 
 train_cfg = dict(
     type='IterBasedTrainLoop',
-    max_iters=20000,
-    val_interval=5000)
+    max_iters=40000,
+    val_interval=2500)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
@@ -203,7 +214,7 @@ default_hooks = dict(
     timer=dict(type='IterTimerHook'),
     logger=dict(type='LoggerHook', interval=50),
     param_scheduler=dict(type='ParamSchedulerHook'),
-    checkpoint=dict(type='CheckpointHook', by_epoch=False, interval=4000),
+    checkpoint=dict(type='CheckpointHook', by_epoch=False, interval=5000),
     sampler_seed=dict(type='DistSamplerSeedHook'),
     visualization=dict(type='SegVisualizationHook'))
 
