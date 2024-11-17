@@ -43,7 +43,7 @@ model = dict(
        num_outs=4),
    decode_head=dict(
        type='FPNHead',
-       in_channels=[256, 256, 256, 256],
+       in_channels=[128, 256, 512, 1024],
        in_index=[0, 1, 2, 3],
        feature_strides=[4, 8, 16, 32],
        channels=256,
@@ -62,7 +62,7 @@ model = dict(
            dict(
                type='DiceLoss',
                use_sigmoid=False,
-               loss_weight=0.5
+               loss_weight=0.0
            )
        ]),
    train_cfg=dict(),
@@ -159,15 +159,15 @@ optim_wrapper = dict(
     type='AmpOptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=0.0001,
+        lr=0.0003,
         betas=(0.9, 0.999),
         weight_decay=0.01),
     paramwise_cfg=dict(
         custom_keys={
             'backbone': dict(lr_mult=0.1)
         }),
-    clip_grad=dict(max_norm=20.0, norm_type=2),
-    accumulative_counts=8)
+    clip_grad=dict(max_norm=25.0, norm_type=2),
+    accumulative_counts=4)
 
 param_scheduler = [
     dict(
