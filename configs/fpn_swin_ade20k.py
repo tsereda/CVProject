@@ -62,7 +62,7 @@ model = dict(
            dict(
                type='DiceLoss',
                use_sigmoid=False,
-               loss_weight=1.0
+               loss_weight=0.
            )
        ]),
    train_cfg=dict(),
@@ -143,7 +143,7 @@ optim_wrapper = dict(
     type='AmpOptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=0.0003,
+        lr=0.00009,
         betas=(0.9, 0.999),
         weight_decay=0.01),
     paramwise_cfg=dict(
@@ -174,8 +174,8 @@ param_scheduler = [
 
 train_cfg = dict(
     type='IterBasedTrainLoop',
-    max_iters=160000,
-    val_interval=6000)
+    max_iters=20000,
+    val_interval=5000)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
@@ -201,7 +201,7 @@ visualizer = dict(
 
 default_hooks = dict(
     timer=dict(type='IterTimerHook'),
-    logger=dict(type='LoggerHook', interval=10),
+    logger=dict(type='LoggerHook', interval=50),
     param_scheduler=dict(type='ParamSchedulerHook'),
     checkpoint=dict(type='CheckpointHook', by_epoch=False, interval=4000),
     sampler_seed=dict(type='DistSamplerSeedHook'),
