@@ -12,3 +12,5 @@ visual_results/vis_data/20241116_014043.json
 visual_results/
 wandb/
 utils/__pycache__/
+utils/__pycache__/wandb_logging.cpython-311.pyc
+utils/__pycache__/class_weights.cpython-311.pyc

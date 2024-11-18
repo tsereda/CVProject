@@ -159,6 +159,7 @@ optim_wrapper = dict(
         weight_decay=0.01),
     paramwise_cfg=dict(
         custom_keys={
+            'backbone': dict(lr_mult=0.1),
             'absolute_pos_embed': dict(decay_mult=0.),
             'relative_position_bias_table': dict(decay_mult=0.),
             'norm': dict(decay_mult=0.)
