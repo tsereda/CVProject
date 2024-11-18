@@ -30,8 +30,8 @@ model = dict(
        out_indices=(0, 1, 2, 3),
        qkv_bias=True,
        qk_scale=None,
-       drop_rate=0.,
-       attn_drop_rate=0.,
+       drop_rate=0.1,
+       attn_drop_rate=0.1,
        with_cp=True,
        init_cfg=dict(
            type='Pretrained',
@@ -43,11 +43,11 @@ model = dict(
        num_outs=4),
    decode_head=dict(
        type='FPNHead',
-       in_channels=[128, 256, 512, 1024],
+       in_channels=[256, 256, 256, 256],
        in_index=[0, 1, 2, 3],
        feature_strides=[4, 8, 16, 32],
        channels=256,
-       dropout_ratio=0.1,
+       dropout_ratio=0.2,
        num_classes=151,
        norm_cfg=dict(type='BN', requires_grad=True),
        align_corners=False,
@@ -64,9 +64,9 @@ model = dict(
                use_sigmoid=False,
                loss_weight=0.0
            )
-       ]),
-   train_cfg=dict(),
-   test_cfg=dict(mode='whole'))
+       ])
+    train_cfg=dict(),
+    test_cfg=dict(mode='whole'))
 
 train_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -75,18 +75,18 @@ train_pipeline = [
         type='RandomResize',
         scale=crop_size,
         ratio_range=(0.5, 2.0),
-        keep_ratio=False),
+        keep_ratio=True),
     dict(type='RandomCrop', crop_size=crop_size, cat_max_ratio=0.75),
     dict(
         type='RandomCutOut',
-        prob=0.3,
+        prob=0.4,
         n_holes=(2, 5),
         cutout_ratio=(0.05, 0.15)),
     dict(type='RandomFlip', prob=0.5),
     dict(
         type='RandomRotate',
-        prob=0.3,
-        degree=(-10, 10),
+        prob=0.4,
+        degree=(-15, 15),
         pad_val=0,
         seg_pad_val=255),
     dict(
@@ -161,7 +161,7 @@ optim_wrapper = dict(
         type='AdamW',
         lr=0.0003,
         betas=(0.9, 0.999),
-        weight_decay=0.01),
+        weight_decay=0.03),
     paramwise_cfg=dict(
         custom_keys={
             'backbone': dict(lr_mult=0.1)
