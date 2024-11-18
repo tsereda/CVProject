@@ -1,0 +1,24 @@
+[33mdc22c6a[m[33m ([m[1;36mHEAD -> [m[1;32mdev[m[33m, [m[1;31morigin/dev[m[33m)[m removed aux head
+[33me9682cb[m back to 7
+[33mbdf85ce[m upped window size to 9
+[33m23746ca[m added aux head
+[33mf67f5c3[m fixed fpn head
+[33m91d6317[m RUN1
+[33m98b71db[m more acc_counts
+[33m525dd17[m Merge branch 'dev' of https://github.com/tsereda/CVProject into dev
+[33mb32514b[m lowered lr
+[33m36fe1c0[m aug, multiscale testing, backbone.1, dice.5, droprate.3 RUN3
+[33m7314500[m aug, multiscale testing, backbone.1, dice.5, droprate.3 RUN3
+[33mcad5c16[m tweaked intervals lr and rotate
+[33m7edea3d[m run1
+[33macae7a2[m wandb integration
+[33md0542b2[m[33m ([m[1;31morigin/master[m[33m)[m see the graph
+[33m0db6f58[m weights from file, balancing
+[33me6b506b[m RefactorWeights 50iter3.5loss
+[33m87e4b16[m[33m ([m[1;32mmaster[m[33m)[m fixed learning rate scheduler, increased channels
+[33mb6ef162[m 39 mIoU, cleanup old files
+[33m672dba2[m 36.5
+[33m2a2ae88[m .9 miou
+[33m76c7984[m good errors
+[33m97d92d1[m init
+[33m3ee3655[m init
