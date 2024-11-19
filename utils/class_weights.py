@@ -52,32 +52,40 @@ def load_class_ratios_from_file(ratio_file_path):
     return ratios, class_samples
 
 def compute_class_weights(ratios, class_samples):
-    """Compute balanced class weights with improved scaling."""
-    # Use log scaling for frequency weights to compress the range
-    freq_weights = np.where(ratios > 0,
-                          1 / np.log1p(ratios * 100),  # Multiply by 100 to handle small ratios better
-                          1.0)
+    """Compute class weights with improved distribution strategy."""
     
-    # Log scaling for sample counts with better normalization
-    max_samples = np.max(class_samples)
+    # Normalize sample counts on log scale
+    log_samples = np.log1p(class_samples)
     sample_weights = np.where(class_samples > 0,
-                            1 / np.log1p(class_samples / max_samples * 1000),
-                            1.0)
+                            1 / (log_samples / log_samples.max()),
+                            0)
+
+    # Frequency-based weights using modified log scaling
+    freq_weights = np.where(ratios > 0,
+                          1 / np.log1p(ratios * 50),  # Reduced multiplier for smoother scaling
+                          0)
     
-    # Combine weights with balanced contribution
-    weights = freq_weights * np.sqrt(sample_weights)  # Reduce sample count influence
+    # Combine weights with square root to reduce extreme values
+    raw_weights = np.sqrt(sample_weights * freq_weights)
     
-    # Normalize more gently
-    weights = (weights - weights.min()) / (weights.max() - weights.min() + 1e-5)
-    weights = weights * 1.5 + 0.1  # Adjust range to [0.1, 1.6]
+    # Apply sigmoid normalization for better spread
+    def sigmoid_normalize(x, temperature=2.0):
+        x = (x - x[x > 0].mean()) / (x[x > 0].std() + 1e-5)
+        return 1 / (1 + np.exp(-temperature * x))
     
-    # Normalize to mean 1
-    weights = weights / weights[weights > 0].mean()
+    weights = sigmoid_normalize(raw_weights)
     
-    # Clip with tighter bounds
-    weights = np.clip(weights, 0.1, 5.0)
+    # Scale to desired range [0.5, 2.5]
+    min_weight, max_weight = 0.5, 2.5
+    weights = (weights - weights[weights > 0].min()) / (weights[weights > 0].max() - weights[weights > 0].min())
+    weights = weights * (max_weight - min_weight) + min_weight
     
-    # Final normalization
+    # Handle rare classes
+    rare_threshold = np.percentile(class_samples[class_samples > 0], 10)
+    rare_boost = np.where(class_samples < rare_threshold, 1.2, 1.0)
+    weights *= rare_boost
+    
+    # Final normalization to ensure mean close to 1
     weights = weights / weights[weights > 0].mean()
     
     # Set ignore label weight to 0

@@ -62,7 +62,7 @@ model = dict(
            dict(
                type='DiceLoss',
                use_sigmoid=False,
-               loss_weight=0.
+               loss_weight=0.5
            )
        ]),
    train_cfg=dict(),
