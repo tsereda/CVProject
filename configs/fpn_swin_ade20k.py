@@ -16,11 +16,11 @@ model = dict(
        size_divisor=32),
    backbone=dict(
        type='SwinTransformer',
-       pretrain_img_size=224,
+       pretrain_img_size=384,
        embed_dims=128,
        depths=[2, 2, 18, 2],
        num_heads=[4, 8, 16, 32],
-       window_size=7,
+       window_size=12,
        use_abs_pos_embed=False,
        drop_path_rate=0.2,
        patch_norm=True,
@@ -35,7 +35,7 @@ model = dict(
        with_cp=True,
        init_cfg=dict(
            type='Pretrained',
-           checkpoint='https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_base_patch4_window7_224_22k_20220317-4f79f7c0.pth')),
+           checkpoint='https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/swin/swin_base_patch4_window12_384_22k_20220317-e5c09f74.pth')),
    neck=dict(
        type='FPN',
        in_channels=[128, 256, 512, 1024],
@@ -62,7 +62,7 @@ model = dict(
            dict(
                type='DiceLoss',
                use_sigmoid=False,
-               loss_weight=0.5
+               loss_weight=0.3
            )
        ]),
    train_cfg=dict(),
@@ -154,7 +154,7 @@ optim_wrapper = dict(
     type='AmpOptimWrapper',
     optimizer=dict(
         type='AdamW',
-        lr=0.0003,
+        lr=0.0001,
         betas=(0.9, 0.999),
         weight_decay=0.01),
     paramwise_cfg=dict(
@@ -164,7 +164,7 @@ optim_wrapper = dict(
             'relative_position_bias_table': dict(decay_mult=0.),
             'norm': dict(decay_mult=0.)
         }),
-    clip_grad=dict(max_norm=30.0, norm_type=2),
+    clip_grad=dict(max_norm=10.0, norm_type=2),
     accumulative_counts=4)
 
 param_scheduler = [
