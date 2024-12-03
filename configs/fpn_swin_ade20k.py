@@ -55,14 +55,14 @@ model = dict(
            dict(
                type='CrossEntropyLoss',
                use_sigmoid=False,
-               loss_weight=1.0,
+               loss_weight=0.5,
                class_weight=None,
                avg_non_ignore=True
            ),
            dict(
                type='DiceLoss',
                use_sigmoid=False,
-               loss_weight=0.3
+               loss_weight=0.5
            )
        ]),
    train_cfg=dict(),
@@ -164,7 +164,7 @@ optim_wrapper = dict(
             'relative_position_bias_table': dict(decay_mult=0.),
             'norm': dict(decay_mult=0.)
         }),
-    clip_grad=dict(max_norm=10.0, norm_type=2),
+    clip_grad=dict(max_norm=5.0, norm_type=2),
     accumulative_counts=4)
 
 param_scheduler = [

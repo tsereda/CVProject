@@ -93,7 +93,7 @@ def main():
     wandb_config = create_wandb_config(cfg)
 
     wandb.init(
-        project="mmseg",  # Change this
+        project="experimentalruns",  # Change this
         name=Path(args.config).stem,  # Uses config filename as run name
         config=wandb_config,
         allow_val_change=True  # This uploads your entire config
