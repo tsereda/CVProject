@@ -55,14 +55,14 @@ model = dict(
            dict(
                type='CrossEntropyLoss',
                use_sigmoid=False,
-               loss_weight=0.5,
+               loss_weight=1.,
                class_weight=None,
                avg_non_ignore=True
            ),
            dict(
                type='DiceLoss',
                use_sigmoid=False,
-               loss_weight=0.5
+               loss_weight=0.4
            )
        ]),
    train_cfg=dict(),
@@ -156,22 +156,22 @@ optim_wrapper = dict(
         type='AdamW',
         lr=0.00006,
         betas=(0.9, 0.999),
-        weight_decay=0.01),
+        weight_decay=0.005),
     paramwise_cfg=dict(
         custom_keys={
-            'backbone': dict(lr_mult=0.1),
+            'backbone': dict(lr_mult=0.5),
             'absolute_pos_embed': dict(decay_mult=0.),
             'relative_position_bias_table': dict(decay_mult=0.),
             'norm': dict(decay_mult=0.)
         }),
-    clip_grad=dict(max_norm=5.0, norm_type=2),
-    accumulative_counts=4)
+    clip_grad=dict(max_norm=6.0, norm_type=2),
+    accumulative_counts=2)
 
 param_scheduler = [
     dict(
         type='LinearLR',
-        start_factor=1.0,
-        end_factor=0.1,  # Added to ensure clear decrease
+        start_factor=0.1,
+        end_factor=1,  # Added to ensure clear decrease
         by_epoch=False,
         begin=0,
         end=2000),
